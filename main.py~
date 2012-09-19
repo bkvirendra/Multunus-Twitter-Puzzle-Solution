@@ -1,0 +1,49 @@
+from flask import Flask, request
+from collections import Counter
+import urllib2, simplejson, re, io, sys
+from StringIO import StringIO
+
+app = Flask(__name__)
+
+def filterLists(arr):
+    resp = []
+    ans = []
+    for i in arr:
+        i = re.sub('[^A-Za-z0-9.]+', '', i)
+        resp.append(i)
+    for j in resp:
+        ans.append(str(j.lower()))
+    return ans
+
+def fetch_tweets(handle):
+	url = "http://api.twitter.com/1/statuses/user_timeline.json?suppress_response_codes&trim_user=true&include_entities=false&include_rts=true&exclude_replies=true&count=1000&screen_name=" + handle
+	data = urllib2.urlopen(url)
+	js = simplejson.load(data)
+	tweets = []
+	for k in js:
+		tweet = k['text']
+		count = filterLists(tweet.split())
+		tweets.append(len(count))
+	sorted_counts = Counter(tweets)
+	rankings = []
+	for k, v in sorted_counts.items():
+		rankings.append(k)
+	result = sorted(rankings, reverse=True)
+	print result
+	return '1'
+
+@app.route("/")
+def index():
+	try:
+		handle = request.form['handle']
+	catch Exception:
+		pass	
+	if handle:
+		d = fetch_tweets(handle)
+	else:
+		d = fetch_tweets('bknar3ndra')
+	return d
+
+if __name__ == "__main__":
+	app.debug = True
+	app.run()
